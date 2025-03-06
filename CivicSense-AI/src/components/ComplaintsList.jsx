@@ -1,32 +1,32 @@
-  import React from 'react';
+import React from 'react';
 import { format } from 'date-fns';
 import { AlertTriangle, CheckCircle, Clock, ArrowUpRight } from 'lucide-react';
 
 const ComplaintsList = ({ complaints }) => {
   const getPriorityBadge = (priority) => {
     const classes = {
-      low: 'bg-green-100 text-green-800',
-      medium: 'bg-yellow-100 text-yellow-800',
-      high: 'bg-orange-100 text-orange-800',
+      Low: 'bg-green-100 text-green-800',
+      Medium: 'bg-yellow-100 text-yellow-800',
+      High: 'bg-orange-100 text-orange-800',
       critical: 'bg-red-100 text-red-800',
     };
-    
+
     return (
-      <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${classes[priority]}`}>
-        {priority.charAt(0).toUpperCase() + priority.slice(1)}
+      <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${classes[priority] || 'bg-gray-100 text-gray-800'}`}>
+        {priority ? priority.charAt(0).toUpperCase() + priority.slice(1) : 'Unknown'}
       </span>
     );
   };
-  
+
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'pending':
+      case 'Pending':
         return <Clock className="h-5 w-5 text-yellow-500" />;
-      case 'in-progress':
+      case 'Progressing':
         return <ArrowUpRight className="h-5 w-5 text-blue-500" />;
-      case 'escalated':
+      case 'Escalated':
         return <AlertTriangle className="h-5 w-5 text-orange-500" />;
-      case 'resolved':
+      case 'Resolved':
         return <CheckCircle className="h-5 w-5 text-green-500" />;
       default:
         return null;
@@ -53,12 +53,16 @@ const ComplaintsList = ({ complaints }) => {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {complaints.slice(0, 5).map((complaint) => (
-              <tr key={complaint.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{complaint.id}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <div className="max-w-xs truncate">{complaint.title}</div>
+              <tr key={complaint._id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  {complaint._id ? complaint._id.slice(-5) : "N/A"}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{complaint.department}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <div className="max-w-xs truncate">{complaint.complaintDescription || 'No description'}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {complaint.department || 'Unknown'}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   {getPriorityBadge(complaint.priority)}
                 </td>
@@ -66,12 +70,14 @@ const ComplaintsList = ({ complaints }) => {
                   <div className="flex items-center">
                     {getStatusIcon(complaint.status)}
                     <span className="ml-2 text-sm text-gray-700">
-                      {complaint.status.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                      {complaint.status 
+                        ? complaint.status.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+                        : 'Unknown'}
                     </span>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {format(new Date(complaint.createdAt), 'MMM dd, yyyy')}
+                  {complaint.createdAt ? format(new Date(complaint.createdAt), 'MMM dd, yyyy') : 'N/A'}
                 </td>
               </tr>
             ))}
