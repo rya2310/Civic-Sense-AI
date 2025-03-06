@@ -20,7 +20,7 @@ app.use(cors({
     origin:  '*',  // Ensure proper frontend connection
     methods: ['GET', 'POST', 'PUT'],
     credentials: true
-})); 
+}));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -38,6 +38,7 @@ app.post('/complaints', authUser, async (req, res) => {
 
         pythonProcess.stdout.on('data', (data) => {
             result += data.toString();
+            console.log("Raw Python Output:", data.toString());  // Log the raw output from Python
         });
 
         pythonProcess.stderr.on('data', (data) => {
@@ -50,20 +51,36 @@ app.post('/complaints', authUser, async (req, res) => {
             }
 
             try {
-                const { category, department, sentiment } = JSON.parse(result.trim());
+                // Parse the JSON response from the Python script
+                let predictions;
+                try {
+                    predictions = JSON.parse(result.trim());
+                } catch (parseError) {
+                    console.error("Error parsing the result:", parseError);
+                    return res.status(500).json({ error: "Invalid JSON response from ML model" });
+                }
+
+                // Normalize keys to lowercase
+                const normalizedPredictions = {
+                    category: predictions["Category"] || "",
+                    department: predictions["Department"] || "",
+                    sentiment: predictions["Sentiment"] || "",
+                    priority: predictions["Priority"] || ""
+                };
 
                 console.log("Complaint:", complaint_text);
-                console.log("Predicted Category:", category);
-                console.log("Predicted Department:", department);
-                console.log("Predicted Sentiment:", sentiment);
+                console.log("Predicted Category:", normalizedPredictions.category);
+                console.log("Predicted Department:", normalizedPredictions.department);
+                console.log("Predicted Sentiment:", normalizedPredictions.sentiment);
+                console.log("Predicted Priority:", normalizedPredictions.priority);
 
                 // ✅ Save Complaint in DB
                 const complaint = new Complaint({ 
                     complaintDescription: complaint_text, 
-                    category, 
-                    department, 
-                    sentiment, 
-                    priority: "High",
+                    category: normalizedPredictions.category, 
+                    department: normalizedPredictions.department, 
+                    sentiment: normalizedPredictions.sentiment, 
+                    priority: normalizedPredictions.priority,
                     status: "Pending" 
                 });
 
@@ -86,7 +103,6 @@ app.post('/complaints', authUser, async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-
 // ✅ Get All Complaints
 app.get('/complaints', async (req, res) => {
     try {
